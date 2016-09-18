@@ -8,12 +8,10 @@
 <body>
 WebRTC Hands-On 2016<br />
 <button type="button" onclick="startVideo();">Start Video</button>
-<button type="button" onclick="stopVideo();">Stop Video</button>
-&nbsp;
 <button type="button" onclick="connect();">Connect</button>
 <button type="button" onclick="hangUp();">Hang Up</button>
 <div>
-    <video id="local_video" autoplay style="width: 160px; height: 120px; border: 1px solid black;"></video>
+    <video id="local_video" autoplay muted=true style="width: 160px; height: 120px; border: 1px solid black;"></video>
     <video id="remote_video" autoplay style="width: 160px; height: 120px; border: 1px solid black;"></video>
 </div>
 <p>SDP to send:<br />
