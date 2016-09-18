@@ -8,6 +8,61 @@ let textToReceiveSdp = document.getElementById('text_for_receive_sdp');
 // 互換性対応
 RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
 
+// シグナリングサーバへ接続する
+let wsUrl = 'ws://localhost:3001/';
+let ws = new WebSocket(wsUrl);
+ws.onopen = function(evt) {
+    console.log('ws open()');
+};
+ws.onerror = function(err) {
+    console.error('ws onerror() ERR:', err);
+};
+ws.onmessage = function(evt) {
+    console.log('ws onmessage() data:', evt.data);
+    let message = JSON.parse(evt.data);
+    if (message.type === 'offer') {
+        // offer 受信時
+        console.log('Received offer ...');
+        textToReceiveSdp.value = message.sdp;
+        let offer = new RTCSessionDescription(message);
+        setOffer(offer);
+    }
+    else if (message.type === 'answer') {
+        // answer 受信時
+        console.log('Received answer ...');
+        textToReceiveSdp.value = message.sdp;
+        let answer = new RTCSessionDescription(message);
+        setAnswer(answer);
+    }
+    else if (message.type === 'candidate') {
+        // ICE candidate 受信時
+        console.log('Received ICE candidate ...');
+        let candidate = new RTCIceCandidate(message.ice);
+        console.log(candidate);
+        addIceCandidate(candidate);
+    }
+};
+
+// ICE candaidate受信時にセットする
+function addIceCandidate(candidate) {
+    if (peerConnection) {
+        peerConnection.addIceCandidate(candidate);
+    }
+    else {
+        console.error('PeerConnection not exist!');
+        return;
+    }
+}
+
+// ICE candidate生成時に送信する
+function sendIceCandidate(candidate) {
+    console.log('---sending ICE candidate ---');
+    let obj = { type: 'candidate', ice: candidate };
+    let message = JSON.stringify(obj);
+    console.log('sending candidate=' + message);
+    ws.send(message);
+}
+
 // getUserMediaでカメラ、マイクにアクセス
 function startVideo() {
     navigator.mediaDevices.getUserMedia({video: true, audio: true})
@@ -94,8 +149,13 @@ function prepareNewConnection() {
 function sendSdp(sessionDescription) {
     console.log('---sending sdp ---');
     textForSendSdp.value = sessionDescription.sdp;
-    textForSendSdp.focus();
-    textForSendSdp.select();
+    /*---
+     textForSendSdp.focus();
+     textForSendSdp.select();
+     ----*/
+    let message = JSON.stringify(sessionDescription);
+    console.log('sending SDP=' + message);
+    ws.send(message);
 }
 
 // Connectボタンが押されたら処理を開始
@@ -118,9 +178,9 @@ function makeOffer() {
                 console.log('createOffer() succsess in promise');
                 return peerConnection.setLocalDescription(sessionDescription);
             }).then(function() {
-            console.log('setLocalDescription() succsess in promise');
-        }).catch(function(err) {
-            console.error(err);
+                console.log('setLocalDescription() succsess in promise');
+            }).catch(function(err) {
+                console.error(err);
         });
     }
 }
@@ -137,9 +197,9 @@ function makeAnswer() {
             console.log('createAnswer() succsess in promise');
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
-        console.log('setLocalDescription() succsess in promise');
-    }).catch(function(err) {
-        console.error(err);
+            console.log('setLocalDescription() succsess in promise');
+        }).catch(function(err) {
+            console.error(err);
     });
 }
 
