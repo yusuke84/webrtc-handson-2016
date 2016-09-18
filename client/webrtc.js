@@ -207,6 +207,7 @@ function hangUp(){
             peerConnection.close();
             peerConnection = null;
             cleanupVideoElemet(remoteVideo);
+            textForSendSdp.value = '';
             return;
         }
     }
