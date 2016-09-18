@@ -21,14 +21,14 @@ ws.onmessage = function(evt) {
     console.log('ws onmessage() data:', evt.data);
     let message = JSON.parse(evt.data);
     if (message.type === 'offer') {
-        // offer 受信時
+        // offer 受信時
         console.log('Received offer ...');
         textToReceiveSdp.value = message.sdp;
         let offer = new RTCSessionDescription(message);
         setOffer(offer);
     }
     else if (message.type === 'answer') {
-        // answer 受信時
+        // answer 受信時
         console.log('Received answer ...');
         textToReceiveSdp.value = message.sdp;
         let answer = new RTCSessionDescription(message);
