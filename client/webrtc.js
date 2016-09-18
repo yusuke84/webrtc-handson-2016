@@ -70,8 +70,10 @@ function prepareNewConnection() {
         switch (peer.iceConnectionState) {
             case 'closed':
             case 'failed':
-                // 切断されたら相手のVideoエレメントを初期化する
-                cleanupVideoElemet(remoteVideo);
+                // ICEのステートが切断状態または異常状態になったら切断処理を実行する
+                if (peerConnection) {
+                    hangUp();
+                }
                 break;
             case 'dissconnected':
                 break;
@@ -200,11 +202,16 @@ function setAnswer(sessionDescription) {
 
 // P2P通信を切断する
 function hangUp(){
-    if (! peerConnection) {
-        console.error('peerConnection NOT exist!');
-        return;
+    if (peerConnection) {
+        if(peerConnection.iceConnectionState !== 'closed'){
+            peerConnection.close();
+            peerConnection = null;
+            cleanupVideoElemet(remoteVideo);
+            return;
+        }
     }
-    peerConnection.close();
+    console.log('peerConnection is closed.');
+
 }
 
 // ビデオエレメントを初期化する
