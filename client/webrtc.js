@@ -118,9 +118,9 @@ function makeOffer() {
                 console.log('createOffer() succsess in promise');
                 return peerConnection.setLocalDescription(sessionDescription);
             }).then(function() {
-            console.log('setLocalDescription() succsess in promise');
-        }).catch(function(err) {
-            console.error(err);
+                console.log('setLocalDescription() succsess in promise');
+            }).catch(function(err) {
+                console.error(err);
         });
     }
 }
@@ -137,9 +137,9 @@ function makeAnswer() {
             console.log('createAnswer() succsess in promise');
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
-        console.log('setLocalDescription() succsess in promise');
-    }).catch(function(err) {
-        console.error(err);
+            console.log('setLocalDescription() succsess in promise');
+        }).catch(function(err) {
+            console.error(err);
     });
 }
 
@@ -179,7 +179,7 @@ function setOffer(sessionDescription) {
                 console.log('setRemoteDescription(offer) succsess in promise');
                 makeAnswer();
             }).catch(function(err) {
-            console.error('setRemoteDescription(offer) ERROR: ', err);
+                console.error('setRemoteDescription(offer) ERROR: ', err);
         });
     }
 }
@@ -194,7 +194,7 @@ function setAnswer(sessionDescription) {
         .then(function() {
             console.log('setRemoteDescription(answer) succsess in promise');
         }).catch(function(err) {
-        console.error('setRemoteDescription(answer) ERROR: ', err);
+            console.error('setRemoteDescription(answer) ERROR: ', err);
     });
 }
 
