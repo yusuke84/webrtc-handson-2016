@@ -279,6 +279,8 @@ function hangUp(){
             console.log('sending close message');
             ws.send(message);
             cleanupVideoElemet(remoteVideo);
+            textForSendSdp.value = '';
+            textToReceiveSdp.value = '';
             return;
         }
     }
