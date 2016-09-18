@@ -12,7 +12,7 @@ function startVideo() {
             playVideo(localVideo,stream);
             localStream = stream;
         }).catch(function (error) { // error
-        console.error('mediaDevice.getUserMedia() error:', error);
+            console.error('mediaDevice.getUserMedia() error:', error);
         return;
     });
 }
