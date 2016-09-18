@@ -41,6 +41,11 @@ ws.onmessage = function(evt) {
         console.log(candidate);
         addIceCandidate(candidate);
     }
+    else if (message.type === 'close') {
+        // closeメッセージ受信時
+        console.log('peer is closed ...');
+        hangUp();
+    }
 };
 
 // ICE candaidate受信時にセットする
@@ -126,8 +131,10 @@ function prepareNewConnection() {
         switch (peer.iceConnectionState) {
             case 'closed':
             case 'failed':
-                // 切断されたら相手のVideoエレメントを初期化する
-                cleanupVideoElemet(remoteVideo);
+                // ICEのステートが切断状態または異常状態になったら切断処理を実行する
+                if (peerConnection) {
+                    hangUp();
+                }
                 break;
             case 'dissconnected':
                 break;
@@ -180,6 +187,7 @@ function makeOffer() {
                 return peerConnection.setLocalDescription(sessionDescription);
             }).then(function() {
                 console.log('setLocalDescription() succsess in promise');
+                sendSdp(peerConnection.localDescription);
             }).catch(function(err) {
                 console.error(err);
         });
@@ -199,6 +207,7 @@ function makeAnswer() {
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
             console.log('setLocalDescription() succsess in promise');
+            sendSdp(peerConnection.localDescription);
         }).catch(function(err) {
             console.error(err);
     });
@@ -261,11 +270,19 @@ function setAnswer(sessionDescription) {
 
 // P2P通信を切断する
 function hangUp(){
-    if (! peerConnection) {
-        console.error('peerConnection NOT exist!');
-        return;
+    if (peerConnection) {
+        if(peerConnection.iceConnectionState !== 'closed'){
+            peerConnection.close();
+            peerConnection = null;
+            let obj = { type: 'close' };
+            let message = JSON.stringify(obj);
+            console.log('sending close message');
+            ws.send(message);
+            cleanupVideoElemet(remoteVideo);
+            return;
+        }
     }
-    peerConnection.close();
+    console.log('peerConnection is closed.');
 }
 
 // ビデオエレメントを初期化する
