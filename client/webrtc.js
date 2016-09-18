@@ -113,9 +113,10 @@ function prepareNewConnection() {
     peer.onicecandidate = function (evt) {
         if (evt.candidate) {
             console.log(evt.candidate);
+            sendIceCandidate(evt.candidate);
         } else {
             console.log('empty ice event');
-            sendSdp(peer.localDescription);
+            // sendSdp(peer.localDescription);
         }
     };
 
@@ -239,7 +240,7 @@ function setOffer(sessionDescription) {
                 console.log('setRemoteDescription(offer) succsess in promise');
                 makeAnswer();
             }).catch(function(err) {
-            console.error('setRemoteDescription(offer) ERROR: ', err);
+                console.error('setRemoteDescription(offer) ERROR: ', err);
         });
     }
 }
@@ -254,7 +255,7 @@ function setAnswer(sessionDescription) {
         .then(function() {
             console.log('setRemoteDescription(answer) succsess in promise');
         }).catch(function(err) {
-        console.error('setRemoteDescription(answer) ERROR: ', err);
+            console.error('setRemoteDescription(answer) ERROR: ', err);
     });
 }
 
