@@ -95,7 +95,7 @@ function playVideo(element, stream) {
 function prepareNewConnection() {
 
     // RTCPeerConnectionを初期化する
-    let pc_config = {"iceServers":[ {"url":"stun:stun.skyway.io:3478"} ]};
+    let pc_config = {"iceServers":[ {"urls":"stun:stun.skyway.io:3478"} ]};
     let peer = new RTCPeerConnection(pc_config);
 
     // リモートのストリームを受信した場合のイベントをセット
