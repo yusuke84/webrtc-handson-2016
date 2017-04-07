@@ -277,8 +277,5 @@ function playVideo(element, stream) {
 // ビデオエレメントを初期化する
 function cleanupVideoElemet(element) {
     element.pause();
-    if (element.src && (element.src !== '') ) {
-        window.URL.revokeObjectURL(element.src);
-    }
-    element.src = '';
+    element.srcObject = null;
 }
