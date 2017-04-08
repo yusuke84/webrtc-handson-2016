@@ -1,9 +1,8 @@
 "use strict";
 
-let WebSocketServer = require('ws').Server;
-let port = 3001;
-let wsServer = new WebSocketServer({ port: port });
-console.log('websocket server start. port=' + port);
+const WebSocketServer = require('ws').Server;
+const port = 3001;
+const wsServer = new WebSocketServer({ port: port });
 
 wsServer.on('connection', function(ws) {
     console.log('-- websocket connected --');
@@ -23,3 +22,5 @@ function isSame(ws1, ws2) {
     // -- compare object --
     return (ws1 === ws2);
 }
+
+console.log('websocket server start. port=' + port);
