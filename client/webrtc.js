@@ -41,10 +41,9 @@ function prepareNewConnection() {
     peer.onicecandidate = function (evt) {
         if (evt.candidate) {
             console.log(evt.candidate);
-            sendIceCandidate(evt.candidate);
         } else {
             console.log('empty ice event');
-            // sendSdp(peer.localDescription);
+            sendSdp(peer.localDescription);
         }
     };
 
