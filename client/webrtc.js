@@ -12,8 +12,8 @@ function startVideo() {
             playVideo(localVideo,stream);
             localStream = stream;
         }).catch(function (error) { // error
-        console.error('mediaDevice.getUserMedia() error:', error);
-        return;
+            console.error('mediaDevice.getUserMedia() error:', error);
+            return;
     });
 }
 
@@ -166,7 +166,7 @@ function setOffer(sessionDescription) {
                 console.log('setRemoteDescription(offer) succsess in promise');
                 makeAnswer();
             }).catch(function(err) {
-            console.error('setRemoteDescription(offer) ERROR: ', err);
+                console.error('setRemoteDescription(offer) ERROR: ', err);
         });
     }
 }
@@ -181,7 +181,7 @@ function setAnswer(sessionDescription) {
         .then(function() {
             console.log('setRemoteDescription(answer) succsess in promise');
         }).catch(function(err) {
-        console.error('setRemoteDescription(answer) ERROR: ', err);
+            console.error('setRemoteDescription(answer) ERROR: ', err);
     });
 }
 
