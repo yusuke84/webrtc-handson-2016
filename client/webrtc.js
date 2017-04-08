@@ -1,12 +1,9 @@
-let localVideo = document.getElementById('local_video');
-let remoteVideo = document.getElementById('remote_video');
+const localVideo = document.getElementById('local_video');
+const remoteVideo = document.getElementById('remote_video');
+const textForSendSdp = document.getElementById('text_for_send_sdp');
+const textToReceiveSdp = document.getElementById('text_for_receive_sdp');
 let localStream = null;
 let peerConnection = null;
-let textForSendSdp = document.getElementById('text_for_send_sdp');
-let textToReceiveSdp = document.getElementById('text_for_receive_sdp');
-
-// 互換性対応
-RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
 
 // シグナリングサーバへ接続する
 let wsUrl = 'ws://localhost:3001/';
@@ -62,8 +59,7 @@ function addIceCandidate(candidate) {
 // ICE candidate生成時に送信する
 function sendIceCandidate(candidate) {
     console.log('---sending ICE candidate ---');
-    let obj = { type: 'candidate', ice: candidate };
-    let message = JSON.stringify(obj);
+    const message = JSON.stringify({ type: 'candidate', ice: candidate });
     console.log('sending candidate=' + message);
     ws.send(message);
 }
@@ -75,42 +71,28 @@ function startVideo() {
             playVideo(localVideo,stream);
             localStream = stream;
         }).catch(function (error) { // error
-        console.error('mediaDevice.getUserMedia() error:', error);
-        return;
+            console.error('mediaDevice.getUserMedia() error:', error);
+            return;
     });
-}
-
-// Videoの再生を開始する
-function playVideo(element, stream) {
-    if ('srcObject' in element) {
-        element.srcObject = stream;
-    }
-    else {
-        element.src = window.URL.createObjectURL(stream);
-    }
-    element.play();
 }
 
 // WebRTCを利用する準備をする
 function prepareNewConnection() {
-
     // RTCPeerConnectionを初期化する
-    let pc_config = {"iceServers":[ {"urls":"stun:stun.skyway.io:3478"} ]};
-    let peer = new RTCPeerConnection(pc_config);
+    const pc_config = {"iceServers":[ {"urls":"stun:stun.skyway.io:3478"} ]};
+    const peer = new RTCPeerConnection(pc_config);
 
     // リモートのストリームを受信した場合のイベントをセット
     if ('ontrack' in peer) {
         peer.ontrack = function(event) {
             console.log('-- peer.ontrack()');
-            let stream = event.streams[0];
-            playVideo(remoteVideo, stream);
+            playVideo(remoteVideo, event.streams[0]);
         };
     }
     else {
         peer.onaddstream = function(event) {
             console.log('-- peer.onaddstream()');
-            let stream = event.stream;
-            playVideo(remoteVideo, stream);
+            playVideo(remoteVideo, event.stream);
         };
     }
 
@@ -161,7 +143,7 @@ function sendSdp(sessionDescription) {
      textForSendSdp.focus();
      textForSendSdp.select();
      ----*/
-    let message = JSON.stringify(sessionDescription);
+    const message = JSON.stringify(sessionDescription);
     console.log('sending SDP=' + message);
     ws.send(message);
 }
@@ -206,8 +188,8 @@ function makeAnswer() {
             console.log('createAnswer() succsess in promise');
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
-        console.log('setLocalDescription() succsess in promise');
-        sendSdp(peerConnection.localDescription);
+            console.log('setLocalDescription() succsess in promise');
+            sendSdp(peerConnection.localDescription);
     }).catch(function(err) {
         console.error(err);
     });
@@ -215,11 +197,11 @@ function makeAnswer() {
 
 // SDPのタイプを判別しセットする
 function onSdpText() {
-    let text = textToReceiveSdp.value;
+    const text = textToReceiveSdp.value;
     if (peerConnection) {
         // Offerした側が相手からのAnserをセットする場合
         console.log('Received answer text...');
-        let answer = new RTCSessionDescription({
+        const answer = new RTCSessionDescription({
             type : 'answer',
             sdp : text,
         });
@@ -228,7 +210,7 @@ function onSdpText() {
     else {
         // Offerを受けた側が相手からのOfferをセットする場合
         console.log('Received offer text...');
-        let offer = new RTCSessionDescription({
+        const offer = new RTCSessionDescription({
             type : 'offer',
             sdp : text,
         });
@@ -249,7 +231,7 @@ function setOffer(sessionDescription) {
                 console.log('setRemoteDescription(offer) succsess in promise');
                 makeAnswer();
             }).catch(function(err) {
-            console.error('setRemoteDescription(offer) ERROR: ', err);
+                console.error('setRemoteDescription(offer) ERROR: ', err);
         });
     }
 }
@@ -264,7 +246,7 @@ function setAnswer(sessionDescription) {
         .then(function() {
             console.log('setRemoteDescription(answer) succsess in promise');
         }).catch(function(err) {
-        console.error('setRemoteDescription(answer) ERROR: ', err);
+            console.error('setRemoteDescription(answer) ERROR: ', err);
     });
 }
 
@@ -274,11 +256,10 @@ function hangUp(){
         if(peerConnection.iceConnectionState !== 'closed'){
             peerConnection.close();
             peerConnection = null;
-            let obj = { type: 'close' };
-            let message = JSON.stringify(obj);
+            const message = JSON.stringify({ type: 'close' });
             console.log('sending close message');
             ws.send(message);
-            cleanupVideoElemet(remoteVideo);
+            cleanupVideoElement(remoteVideo);
             textForSendSdp.value = '';
             textToReceiveSdp.value = '';
             return;
@@ -287,16 +268,14 @@ function hangUp(){
     console.log('peerConnection is closed.');
 }
 
+// Videoの再生を開始する
+function playVideo(element, stream) {
+    element.srcObject = stream;
+    element.play();
+}
+
 // ビデオエレメントを初期化する
-function cleanupVideoElemet(element) {
+function cleanupVideoElement(element) {
     element.pause();
-    if ('srcObject' in element) {
-        element.srcObject = null;
-    }
-    else {
-        if (element.src && (element.src !== '') ) {
-            window.URL.revokeObjectURL(element.src);
-        }
-        element.src = '';
-    }
+    element.srcObject = null;
 }
