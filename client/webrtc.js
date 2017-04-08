@@ -259,7 +259,7 @@ function hangUp(){
             const message = JSON.stringify({ type: 'close' });
             console.log('sending close message');
             ws.send(message);
-            cleanupVideoElemet(remoteVideo);
+            cleanupVideoElement(remoteVideo);
             textForSendSdp.value = '';
             textToReceiveSdp.value = '';
             return;
@@ -275,7 +275,7 @@ function playVideo(element, stream) {
 }
 
 // ビデオエレメントを初期化する
-function cleanupVideoElemet(element) {
+function cleanupVideoElement(element) {
     element.pause();
     element.srcObject = null;
 }
