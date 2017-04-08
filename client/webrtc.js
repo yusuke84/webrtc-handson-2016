@@ -1,12 +1,9 @@
-let localVideo = document.getElementById('local_video');
-let remoteVideo = document.getElementById('remote_video');
+const localVideo = document.getElementById('local_video');
+const remoteVideo = document.getElementById('remote_video');
+const textForSendSdp = document.getElementById('text_for_send_sdp');
+const textToReceiveSdp = document.getElementById('text_for_receive_sdp');
 let localStream = null;
 let peerConnection = null;
-let textForSendSdp = document.getElementById('text_for_send_sdp');
-let textToReceiveSdp = document.getElementById('text_for_receive_sdp');
-
-// 互換性対応
-RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection;
 
 // getUserMediaでカメラ、マイクにアクセス
 function startVideo() {
@@ -15,42 +12,28 @@ function startVideo() {
             playVideo(localVideo,stream);
             localStream = stream;
         }).catch(function (error) { // error
-            console.error('mediaDevice.getUserMedia() error:', error);
+        console.error('mediaDevice.getUserMedia() error:', error);
         return;
     });
 }
 
-// Videoの再生を開始する
-function playVideo(element, stream) {
-    if ('srcObject' in element) {
-        element.srcObject = stream;
-    }
-    else {
-        element.src = window.URL.createObjectURL(stream);
-    }
-    element.play();
-}
-
 // WebRTCを利用する準備をする
 function prepareNewConnection() {
-
     // RTCPeerConnectionを初期化する
-    let pc_config = {"iceServers":[ {"urls":"stun:stun.skyway.io:3478"} ]};
-    let peer = new RTCPeerConnection(pc_config);
+    const pc_config = {"iceServers":[ {"urls":"stun:stun.skyway.io:3478"} ]};
+    const peer = new RTCPeerConnection(pc_config);
 
     // リモートのストリームを受信した場合のイベントをセット
     if ('ontrack' in peer) {
         peer.ontrack = function(event) {
             console.log('-- peer.ontrack()');
-            let stream = event.streams[0];
-            playVideo(remoteVideo, stream);
+            playVideo(remoteVideo, event.streams[0]);
         };
     }
     else {
         peer.onaddstream = function(event) {
             console.log('-- peer.onaddstream()');
-            let stream = event.stream;
-            playVideo(remoteVideo, stream);
+            playVideo(remoteVideo, event.stream);
         };
     }
 
@@ -58,9 +41,10 @@ function prepareNewConnection() {
     peer.onicecandidate = function (evt) {
         if (evt.candidate) {
             console.log(evt.candidate);
+            sendIceCandidate(evt.candidate);
         } else {
             console.log('empty ice event');
-            sendSdp(peer.localDescription);
+            // sendSdp(peer.localDescription);
         }
     };
 
@@ -121,6 +105,7 @@ function makeOffer() {
                 return peerConnection.setLocalDescription(sessionDescription);
             }).then(function() {
             console.log('setLocalDescription() succsess in promise');
+            sendSdp(peerConnection.localDescription);
         }).catch(function(err) {
             console.error(err);
         });
@@ -140,6 +125,7 @@ function makeAnswer() {
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
         console.log('setLocalDescription() succsess in promise');
+        sendSdp(peerConnection.localDescription);
     }).catch(function(err) {
         console.error(err);
     });
@@ -147,11 +133,11 @@ function makeAnswer() {
 
 // SDPのタイプを判別しセットする
 function onSdpText() {
-    let text = textToReceiveSdp.value;
+    const text = textToReceiveSdp.value;
     if (peerConnection) {
         // Offerした側が相手からのAnserをセットする場合
         console.log('Received answer text...');
-        let answer = new RTCSessionDescription({
+        const answer = new RTCSessionDescription({
             type : 'answer',
             sdp : text,
         });
@@ -160,7 +146,7 @@ function onSdpText() {
     else {
         // Offerを受けた側が相手からのOfferをセットする場合
         console.log('Received offer text...');
-        let offer = new RTCSessionDescription({
+        const offer = new RTCSessionDescription({
             type : 'offer',
             sdp : text,
         });
@@ -206,7 +192,7 @@ function hangUp(){
         if(peerConnection.iceConnectionState !== 'closed'){
             peerConnection.close();
             peerConnection = null;
-            cleanupVideoElemet(remoteVideo);
+            cleanupVideoElement(remoteVideo);
             textForSendSdp.value = '';
             return;
         }
@@ -215,16 +201,14 @@ function hangUp(){
 
 }
 
+// Videoの再生を開始する
+function playVideo(element, stream) {
+    element.srcObject = stream;
+    element.play();
+}
+
 // ビデオエレメントを初期化する
-function cleanupVideoElemet(element) {
+function cleanupVideoElement(element) {
     element.pause();
-    if ('srcObject' in element) {
-        element.srcObject = null;
-    }
-    else {
-        if (element.src && (element.src !== '') ) {
-            window.URL.revokeObjectURL(element.src);
-        }
-        element.src = '';
-    }
+    element.srcObject = null;
 }
