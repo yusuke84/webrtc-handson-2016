@@ -110,7 +110,6 @@ function makeOffer() {
                 return peerConnection.setLocalDescription(sessionDescription);
             }).then(function() {
                 console.log('setLocalDescription() succsess in promise');
-                sendSdp(peerConnection.localDescription);
         }).catch(function(err) {
             console.error(err);
         });
@@ -130,7 +129,6 @@ function makeAnswer() {
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
             console.log('setLocalDescription() succsess in promise');
-            sendSdp(peerConnection.localDescription);
     }).catch(function(err) {
         console.error(err);
     });
