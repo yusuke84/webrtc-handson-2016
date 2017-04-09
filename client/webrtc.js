@@ -17,6 +17,12 @@ function startVideo() {
     });
 }
 
+// Videoの再生を開始する
+function playVideo(element, stream) {
+    element.srcObject = stream;
+    element.play();
+}
+
 // WebRTCを利用する準備をする
 function prepareNewConnection() {
     // RTCPeerConnectionを初期化する
@@ -104,7 +110,6 @@ function makeOffer() {
                 return peerConnection.setLocalDescription(sessionDescription);
             }).then(function() {
                 console.log('setLocalDescription() succsess in promise');
-                sendSdp(peerConnection.localDescription);
         }).catch(function(err) {
             console.error(err);
         });
@@ -123,8 +128,7 @@ function makeAnswer() {
             console.log('createAnswer() succsess in promise');
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
-        console.log('setLocalDescription() succsess in promise');
-        sendSdp(peerConnection.localDescription);
+            console.log('setLocalDescription() succsess in promise');
     }).catch(function(err) {
         console.error(err);
     });
@@ -198,12 +202,6 @@ function hangUp(){
     }
     console.log('peerConnection is closed.');
 
-}
-
-// Videoの再生を開始する
-function playVideo(element, stream) {
-    element.srcObject = stream;
-    element.play();
 }
 
 // ビデオエレメントを初期化する
