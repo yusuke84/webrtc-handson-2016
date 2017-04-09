@@ -103,8 +103,8 @@ function makeOffer() {
                 console.log('createOffer() succsess in promise');
                 return peerConnection.setLocalDescription(sessionDescription);
             }).then(function() {
-            console.log('setLocalDescription() succsess in promise');
-            sendSdp(peerConnection.localDescription);
+                console.log('setLocalDescription() succsess in promise');
+                sendSdp(peerConnection.localDescription);
         }).catch(function(err) {
             console.error(err);
         });
@@ -123,8 +123,8 @@ function makeAnswer() {
             console.log('createAnswer() succsess in promise');
             return peerConnection.setLocalDescription(sessionDescription);
         }).then(function() {
-        console.log('setLocalDescription() succsess in promise');
-        sendSdp(peerConnection.localDescription);
+            console.log('setLocalDescription() succsess in promise');
+            sendSdp(peerConnection.localDescription);
     }).catch(function(err) {
         console.error(err);
     });
