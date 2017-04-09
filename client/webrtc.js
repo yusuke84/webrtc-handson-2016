@@ -6,8 +6,8 @@ let localStream = null;
 let peerConnection = null;
 
 // シグナリングサーバへ接続する
-let wsUrl = 'ws://localhost:3001/';
-let ws = new WebSocket(wsUrl);
+const wsUrl = 'ws://localhost:3001/';
+const ws = new WebSocket(wsUrl);
 ws.onopen = function(evt) {
     console.log('ws open()');
 };
@@ -16,25 +16,25 @@ ws.onerror = function(err) {
 };
 ws.onmessage = function(evt) {
     console.log('ws onmessage() data:', evt.data);
-    let message = JSON.parse(evt.data);
+    const message = JSON.parse(evt.data);
     if (message.type === 'offer') {
         // offer 受信時
         console.log('Received offer ...');
         textToReceiveSdp.value = message.sdp;
-        let offer = new RTCSessionDescription(message);
+        const offer = new RTCSessionDescription(message);
         setOffer(offer);
     }
     else if (message.type === 'answer') {
         // answer 受信時
         console.log('Received answer ...');
         textToReceiveSdp.value = message.sdp;
-        let answer = new RTCSessionDescription(message);
+        const answer = new RTCSessionDescription(message);
         setAnswer(answer);
     }
     else if (message.type === 'candidate') {
         // ICE candidate 受信時
         console.log('Received ICE candidate ...');
-        let candidate = new RTCIceCandidate(message.ice);
+        const candidate = new RTCIceCandidate(message.ice);
         console.log(candidate);
         addIceCandidate(candidate);
     }
