@@ -79,7 +79,15 @@ function startVideo() {
 // Videoの再生を開始する
 function playVideo(element, stream) {
     element.srcObject = stream;
-    element.play();
+    var playPromise = element.play();
+    if (playPromise !== undefined) {
+      playPromise.then(_ => {
+        // Automatic playback started!
+      })
+      .catch(error => {
+        // Auto-play was prevented
+      });
+    };
 }
 
 // WebRTCを利用する準備をする
@@ -89,18 +97,10 @@ function prepareNewConnection() {
     const peer = new RTCPeerConnection(pc_config);
 
     // リモートのストリームを受信した場合のイベントをセット
-    if ('ontrack' in peer) {
-        peer.ontrack = function(event) {
-            console.log('-- peer.ontrack()');
-            playVideo(remoteVideo, event.streams[0]);
-        };
-    }
-    else {
-        peer.onaddstream = function(event) {
-            console.log('-- peer.onaddstream()');
-            playVideo(remoteVideo, event.stream);
-        };
-    }
+    peer.ontrack = function(event) {
+        console.log('-- peer.ontrack()');
+        playVideo(remoteVideo, event.streams[0]);
+    };
 
     // ICE Candidateを収集したときのイベント
     peer.onicecandidate = function (evt) {
@@ -132,7 +132,7 @@ function prepareNewConnection() {
     // ローカルのストリームを利用できるように準備する
     if (localStream) {
         console.log('Adding local stream...');
-        peer.addStream(localStream);
+        localStream.getTracks().forEach(track => peer.addTrack(track, localStream));
     }
     else {
         console.warn('no local stream, but continue.');
