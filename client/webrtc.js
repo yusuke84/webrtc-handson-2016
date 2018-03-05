@@ -8,28 +8,26 @@ let peerConnection = null;
 // シグナリングサーバへ接続する
 const wsUrl = 'ws://localhost:3001/';
 const ws = new WebSocket(wsUrl);
-ws.onopen = function(evt) {
+ws.onopen = (evt) => {
     console.log('ws open()');
 };
-ws.onerror = function(err) {
+ws.onerror = (err) => {
     console.error('ws onerror() ERR:', err);
 };
-ws.onmessage = function(evt) {
+ws.onmessage = (evt) => {
     console.log('ws onmessage() data:', evt.data);
     const message = JSON.parse(evt.data);
     if (message.type === 'offer') {
         // offer 受信時
         console.log('Received offer ...');
         textToReceiveSdp.value = message.sdp;
-        const offer = new RTCSessionDescription(message);
-        setOffer(offer);
+        setOffer(message);
     }
     else if (message.type === 'answer') {
         // answer 受信時
         console.log('Received answer ...');
         textToReceiveSdp.value = message.sdp;
-        const answer = new RTCSessionDescription(message);
-        setAnswer(answer);
+        setAnswer(message);
     }
     else if (message.type === 'candidate') {
         // ICE candidate 受信時
@@ -65,15 +63,13 @@ function sendIceCandidate(candidate) {
 }
 
 // getUserMediaでカメラ、マイクにアクセス
-function startVideo() {
-    navigator.mediaDevices.getUserMedia({video: true, audio: true})
-        .then(function (stream) { // success
-            playVideo(localVideo,stream);
-            localStream = stream;
-        }).catch(function (error) { // error
-            console.error('mediaDevice.getUserMedia() error:', error);
-            return;
-    });
+async function startVideo() {
+    try{
+        localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+        playVideo(localVideo,localStream);
+    } catch(err){
+        console.error('mediaDevice.getUserMedia() error:', err);
+    }
 }
 
 // Videoの再生を開始する
@@ -97,13 +93,13 @@ function prepareNewConnection() {
     const peer = new RTCPeerConnection(pc_config);
 
     // リモートのストリームを受信した場合のイベントをセット
-    peer.ontrack = function(event) {
+    peer.ontrack = evt => {
         console.log('-- peer.ontrack()');
         playVideo(remoteVideo, event.streams[0]);
     };
 
     // ICE Candidateを収集したときのイベント
-    peer.onicecandidate = function (evt) {
+    peer.onicecandidate = evt => {
         if (evt.candidate) {
             console.log(evt.candidate);
             sendIceCandidate(evt.candidate);
@@ -114,7 +110,7 @@ function prepareNewConnection() {
     };
 
     // ICEのステータスが変更になったときの処理
-    peer.oniceconnectionstatechange = function() {
+    peer.oniceconnectionstatechange = () => {
         console.log('ICE connection Status has changed to ' + peer.iceConnectionState);
         switch (peer.iceConnectionState) {
             case 'closed':
@@ -168,37 +164,34 @@ function connect() {
 // Offer SDPを生成する
 function makeOffer() {
     peerConnection = prepareNewConnection();
-    peerConnection.onnegotiationneeded = function(){
-        peerConnection.createOffer()
-            .then(function (sessionDescription) {
-                console.log('createOffer() succsess in promise');
-                return peerConnection.setLocalDescription(sessionDescription);
-            }).then(function() {
-                console.log('setLocalDescription() succsess in promise');
-                sendSdp(peerConnection.localDescription);
-        }).catch(function(err) {
-            console.error(err);
-        });
+    try {
+        peerConnection.onnegotiationneeded = async () => {
+            const offer = await peerConnection.createOffer();
+            console.log('createOffer() succsess in promise');
+            await peerConnection.setLocalDescription(offer);
+            console.log('setLocalDescription() succsess in promise');
+            sendSdp(peerConnection.localDescription);
+        }
+    } catch(err){
+        console.error(err);
     }
 }
 
 // Answer SDPを生成する
-function makeAnswer() {
+async function makeAnswer() {
     console.log('sending Answer. Creating remote session description...' );
     if (! peerConnection) {
         console.error('peerConnection NOT exist!');
         return;
     }
-    peerConnection.createAnswer()
-        .then(function (sessionDescription) {
-            console.log('createAnswer() succsess in promise');
-            return peerConnection.setLocalDescription(sessionDescription);
-        }).then(function() {
-            console.log('setLocalDescription() succsess in promise');
-            sendSdp(peerConnection.localDescription);
-    }).catch(function(err) {
+    try{
+        await peerConnection.setLocalDescription(await peerConnection.createAnswer());
+        console.log('createAnswer() succsess in promise');
+        console.log('setLocalDescription() succsess in promise');
+        sendSdp(peerConnection.localDescription);
+    } catch(err){
         console.error(err);
-    });
+    }
 }
 
 // SDPのタイプを判別しセットする
@@ -207,20 +200,12 @@ function onSdpText() {
     if (peerConnection) {
         // Offerした側が相手からのAnserをセットする場合
         console.log('Received answer text...');
-        const answer = new RTCSessionDescription({
-            type : 'answer',
-            sdp : text,
-        });
-        setAnswer(answer);
+        setAnswer(text);
     }
     else {
         // Offerを受けた側が相手からのOfferをセットする場合
         console.log('Received offer text...');
-        const offer = new RTCSessionDescription({
-            type : 'offer',
-            sdp : text,
-        });
-        setOffer(offer);
+        setOffer(text);
     }
     textToReceiveSdp.value ='';
 }
@@ -230,30 +215,30 @@ function setOffer(sessionDescription) {
     if (peerConnection) {
         console.error('peerConnection alreay exist!');
     }
-    peerConnection = prepareNewConnection();
-    peerConnection.onnegotiationneeded = function () {
-        peerConnection.setRemoteDescription(sessionDescription)
-            .then(function() {
-                console.log('setRemoteDescription(offer) succsess in promise');
-                makeAnswer();
-            }).catch(function(err) {
-                console.error('setRemoteDescription(offer) ERROR: ', err);
-        });
+    peerConnection = prepareNewConnection();   
+    peerConnection.onnegotiationneeded = async () => {
+        try {
+            await peerConnection.setRemoteDescription(sessionDescription);
+            console.log('setRemoteDescription(answer) succsess in promise');
+            makeAnswer();
+        } catch(err){
+            console.error('setRemoteDescription ERROR: ', err);
+        }
     }
 }
 
 // Answer側のSDPをセットした場合の処理
-function setAnswer(sessionDescription) {
+async function setAnswer(sessionDescription) {
     if (! peerConnection) {
         console.error('peerConnection NOT exist!');
         return;
     }
-    peerConnection.setRemoteDescription(sessionDescription)
-        .then(function() {
-            console.log('setRemoteDescription(answer) succsess in promise');
-        }).catch(function(err) {
-            console.error('setRemoteDescription(answer) ERROR: ', err);
-    });
+    try{
+        await peerConnection.setRemoteDescription(sessionDescription);
+        console.log('setRemoteDescription(answer) succsess in promise');
+    } catch(err){
+        console.error('setRemoteDescription(answer) ERROR: ', err);
+    }
 }
 
 // P2P通信を切断する
