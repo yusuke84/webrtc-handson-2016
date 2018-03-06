@@ -225,10 +225,7 @@ async function setOffer(sessionDescription) {
     try{
         await peerConnection.setRemoteDescription(sessionDescription);
         console.log('setRemoteDescription(answer) succsess in promise');
-        let answer = await peerConnection.createAnswer();
-        console.log('createAnswer() succsess in promise');
-        await peerConnection.setLocalDescription(answer);
-        console.log('setLocalDescription() succsess in promise');
+        makeAnswer();
     } catch(err){
         console.error('setRemoteDescription(offer) ERROR: ', err);
     }
