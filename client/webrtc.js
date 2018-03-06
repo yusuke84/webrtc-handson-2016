@@ -4,6 +4,7 @@ const textForSendSdp = document.getElementById('text_for_send_sdp');
 const textToReceiveSdp = document.getElementById('text_for_receive_sdp');
 let localStream = null;
 let peerConnection = null;
+let negotiationneededCounter = 0;
 
 // シグナリングサーバへ接続する
 const wsUrl = 'ws://localhost:3001/';
@@ -18,26 +19,22 @@ ws.onmessage = (evt) => {
     console.log('ws onmessage() data:', evt.data);
     const message = JSON.parse(evt.data);
     if (message.type === 'offer') {
-        // offer 受信時
         console.log('Received offer ...');
         textToReceiveSdp.value = message.sdp;
         setOffer(message);
     }
     else if (message.type === 'answer') {
-        // answer 受信時
         console.log('Received answer ...');
         textToReceiveSdp.value = message.sdp;
         setAnswer(message);
     }
     else if (message.type === 'candidate') {
-        // ICE candidate 受信時
         console.log('Received ICE candidate ...');
         const candidate = new RTCIceCandidate(message.ice);
         console.log(candidate);
         addIceCandidate(candidate);
     }
     else if (message.type === 'close') {
-        // closeメッセージ受信時
         console.log('peer is closed ...');
         hangUp();
     }
@@ -65,7 +62,7 @@ function sendIceCandidate(candidate) {
 // getUserMediaでカメラ、マイクにアクセス
 async function startVideo() {
     try{
-        localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+        localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
         playVideo(localVideo,localStream);
     } catch(err){
         console.error('mediaDevice.getUserMedia() error:', err);
@@ -73,22 +70,13 @@ async function startVideo() {
 }
 
 // Videoの再生を開始する
-function playVideo(element, stream) {
+async function playVideo(element, stream) {
     element.srcObject = stream;
-    var playPromise = element.play();
-    if (playPromise !== undefined) {
-      playPromise.then(_ => {
-        // Automatic playback started!
-      })
-      .catch(error => {
-        // Auto-play was prevented
-      });
-    };
+    await element.play();
 }
 
 // WebRTCを利用する準備をする
 function prepareNewConnection() {
-    // RTCPeerConnectionを初期化する
     const pc_config = {"iceServers":[ {"urls":"stun:stun.skyway.io:3478"} ]};
     const peer = new RTCPeerConnection(pc_config);
 
@@ -115,7 +103,6 @@ function prepareNewConnection() {
         switch (peer.iceConnectionState) {
             case 'closed':
             case 'failed':
-                // ICEのステートが切断状態または異常状態になったら切断処理を実行する
                 if (peerConnection) {
                     hangUp();
                 }
@@ -129,8 +116,7 @@ function prepareNewConnection() {
     if (localStream) {
         console.log('Adding local stream...');
         localStream.getTracks().forEach(track => peer.addTrack(track, localStream));
-    }
-    else {
+    } else {
         console.warn('no local stream, but continue.');
     }
 
@@ -166,11 +152,14 @@ function makeOffer() {
     peerConnection = prepareNewConnection();
     try {
         peerConnection.onnegotiationneeded = async () => {
-            const offer = await peerConnection.createOffer();
-            console.log('createOffer() succsess in promise');
-            await peerConnection.setLocalDescription(offer);
-            console.log('setLocalDescription() succsess in promise');
-            sendSdp(peerConnection.localDescription);
+            if(negotiationneededCounter === 0){
+                const offer = await peerConnection.createOffer();
+                console.log('createOffer() succsess in promise');
+                await peerConnection.setLocalDescription(offer);
+                console.log('setLocalDescription() succsess in promise');
+                sendSdp(peerConnection.localDescription);
+                negotiationneededCounter++;
+            }
         }
     } catch(err){
         console.error(err);
@@ -198,12 +187,10 @@ async function makeAnswer() {
 function onSdpText() {
     const text = textToReceiveSdp.value;
     if (peerConnection) {
-        // Offerした側が相手からのAnserをセットする場合
         console.log('Received answer text...');
         setAnswer(text);
     }
     else {
-        // Offerを受けた側が相手からのOfferをセットする場合
         console.log('Received offer text...');
         setOffer(text);
     }
@@ -247,6 +234,7 @@ function hangUp(){
         if(peerConnection.iceConnectionState !== 'closed'){
             peerConnection.close();
             peerConnection = null;
+            negotiationneededCounter = 0;
             const message = JSON.stringify({ type: 'close' });
             console.log('sending close message');
             ws.send(message);
