@@ -5,6 +5,7 @@ const textToReceiveSdp = document.getElementById('text_for_receive_sdp');
 let localStream = null;
 let peerConnection = null;
 let negotiationneededCounter = 0;
+let isOffer = false;
 
 // シグナリングサーバへ接続する
 const wsUrl = 'ws://localhost:3001/';
@@ -46,7 +47,7 @@ ws.onmessage = (evt) => {
         default: { 
             console.log("Invalid message"); 
             break;              
-         }         
+        }         
     }
 };
 
@@ -86,17 +87,17 @@ async function playVideo(element, stream) {
 }
 
 // WebRTCを利用する準備をする
-function prepareNewConnection() {
+function prepareNewConnection(isOffer) {
     const pc_config = {"iceServers":[ {"urls":"stun:stun.skyway.io:3478"} ]};
     const peer = new RTCPeerConnection(pc_config);
 
-    // リモートのストリームを受信した場合のイベントをセット
+    // リモートのMediStreamTrackを受信した時
     peer.ontrack = evt => {
         console.log('-- peer.ontrack()');
-        playVideo(remoteVideo, event.streams[0]);
+        playVideo(remoteVideo, evt.streams[0]);
     };
 
-    // ICE Candidateを収集したときのイベント
+    // ICE Candidateを収集した時
     peer.onicecandidate = evt => {
         if (evt.candidate) {
             console.log(evt.candidate);
@@ -122,7 +123,25 @@ function prepareNewConnection() {
         }
     };
 
-    // ローカルのストリームを利用できるように準備する
+    // Offer側でネゴシエーションが必要になったときの処理
+    peer.onnegotiationneeded = async () => {
+        try {
+            if(isOffer){
+                if(negotiationneededCounter === 0){
+                    let offer = await peer.createOffer();
+                    console.log('createOffer() succsess in promise');
+                    await peer.setLocalDescription(offer);
+                    console.log('setLocalDescription() succsess in promise');
+                    sendSdp(peerConnection.localDescription);
+                    negotiationneededCounter++;
+                }
+            }
+        } catch(err){
+            console.error('setLocalDescription(offer) ERROR: ', err);
+        }
+    }
+
+    // ローカルのMediaStreamを利用できるようにする
     if (localStream) {
         console.log('Adding local stream...');
         localStream.getTracks().forEach(track => peer.addTrack(track, localStream));
@@ -133,7 +152,7 @@ function prepareNewConnection() {
     return peer;
 }
 
-// 手動シグナリングのための処理を追加する
+// 手動シグナリングでコピペするための処理
 function sendSdp(sessionDescription) {
     console.log('---sending sdp ---');
     textForSendSdp.value = sessionDescription.sdp;
@@ -146,33 +165,14 @@ function sendSdp(sessionDescription) {
     ws.send(message);
 }
 
-// Connectボタンが押されたら処理を開始
+// Connectボタンが押されたらWebRTCのOffer処理を開始
 function connect() {
     if (! peerConnection) {
         console.log('make Offer');
-        makeOffer();
+        peerConnection = prepareNewConnection();
     }
     else {
         console.warn('peer already exist.');
-    }
-}
-
-// Offer SDPを生成する
-function makeOffer() {
-    peerConnection = prepareNewConnection();
-    try {
-        peerConnection.onnegotiationneeded = async () => {
-            if(negotiationneededCounter === 0){
-                let offer = await peerConnection.createOffer();
-                console.log('createOffer() succsess in promise');
-                await peerConnection.setLocalDescription(offer);
-                console.log('setLocalDescription() succsess in promise');
-                sendSdp(peerConnection.localDescription);
-                negotiationneededCounter++;
-            }
-        }
-    } catch(err){
-        console.error(err);
     }
 }
 
@@ -194,7 +194,7 @@ async function makeAnswer() {
     }
 }
 
-// SDPのタイプを判別しセットする
+// Offer側とAnswer側で処理を分岐
 function onSdpText() {
     const text = textToReceiveSdp.value;
     if (peerConnection) {
@@ -208,24 +208,26 @@ function onSdpText() {
     textToReceiveSdp.value ='';
 }
 
-// Offer側のSDPをセットした場合の処理
-function setOffer(sessionDescription) {
+// Offer側のSDPをセットする処理
+async function setOffer(sessionDescription) {
     if (peerConnection) {
         console.error('peerConnection alreay exist!');
     }
-    peerConnection = prepareNewConnection();   
-    peerConnection.onnegotiationneeded = async () => {
-        try {
-            await peerConnection.setRemoteDescription(sessionDescription);
-            console.log('setRemoteDescription(answer) succsess in promise');
-            makeAnswer();
-        } catch(err){
-            console.error('setRemoteDescription ERROR: ', err);
-        }
+    peerConnection = prepareNewConnection(false);
+    try{
+        await peerConnection.setRemoteDescription(sessionDescription);
+        console.log('setRemoteDescription(answer) succsess in promise');
+        let answer = await peerConnection.createAnswer();
+        console.log('createAnswer() succsess in promise');
+        await peerConnection.setLocalDescription(answer);
+        console.log('setLocalDescription() succsess in promise');
+        sendSdp(peerConnection.localDescription); 
+    } catch(err){
+        console.error('setRemoteDescription(offer) ERROR: ', err);
     }
 }
 
-// Answer側のSDPをセットした場合の処理
+// Answer側のSDPをセットする場合
 async function setAnswer(sessionDescription) {
     if (! peerConnection) {
         console.error('peerConnection NOT exist!');
