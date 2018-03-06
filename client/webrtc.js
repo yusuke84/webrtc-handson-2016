@@ -18,25 +18,35 @@ ws.onerror = (err) => {
 ws.onmessage = (evt) => {
     console.log('ws onmessage() data:', evt.data);
     const message = JSON.parse(evt.data);
-    if (message.type === 'offer') {
-        console.log('Received offer ...');
-        textToReceiveSdp.value = message.sdp;
-        setOffer(message);
-    }
-    else if (message.type === 'answer') {
-        console.log('Received answer ...');
-        textToReceiveSdp.value = message.sdp;
-        setAnswer(message);
-    }
-    else if (message.type === 'candidate') {
-        console.log('Received ICE candidate ...');
-        const candidate = new RTCIceCandidate(message.ice);
-        console.log(candidate);
-        addIceCandidate(candidate);
-    }
-    else if (message.type === 'close') {
-        console.log('peer is closed ...');
-        hangUp();
+    switch(message.type){
+        case 'offer': {
+            console.log('Received offer ...');
+            textToReceiveSdp.value = message.sdp;
+            setOffer(message);
+            break;
+        }
+        case 'answer': {
+            console.log('Received answer ...');
+            textToReceiveSdp.value = message.sdp;
+            setAnswer(message);
+            break;
+        }
+        case 'candidate': {
+            console.log('Received ICE candidate ...');
+            const candidate = new RTCIceCandidate(message.ice);
+            console.log(candidate);
+            addIceCandidate(candidate);
+            break;
+        }
+        case 'close': {
+            console.log('peer is closed ...');
+            hangUp();
+            break;
+        }
+        default: { 
+            console.log("Invalid message"); 
+            break;              
+         }         
     }
 };
 
@@ -96,7 +106,7 @@ function prepareNewConnection() {
             // sendSdp(peer.localDescription);
         }
     };
-
+    
     // ICEのステータスが変更になったときの処理
     peer.oniceconnectionstatechange = () => {
         console.log('ICE connection Status has changed to ' + peer.iceConnectionState);
@@ -153,7 +163,7 @@ function makeOffer() {
     try {
         peerConnection.onnegotiationneeded = async () => {
             if(negotiationneededCounter === 0){
-                const offer = await peerConnection.createOffer();
+                let offer = await peerConnection.createOffer();
                 console.log('createOffer() succsess in promise');
                 await peerConnection.setLocalDescription(offer);
                 console.log('setLocalDescription() succsess in promise');
@@ -174,8 +184,9 @@ async function makeAnswer() {
         return;
     }
     try{
-        await peerConnection.setLocalDescription(await peerConnection.createAnswer());
+        let answer = await peerConnection.createAnswer();
         console.log('createAnswer() succsess in promise');
+        await peerConnection.setLocalDescription(answer);
         console.log('setLocalDescription() succsess in promise');
         sendSdp(peerConnection.localDescription);
     } catch(err){
