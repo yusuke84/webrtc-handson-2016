@@ -6,6 +6,6 @@
 
 今回のソースコードを作成するにあたり、著者に了解を頂いた上でいかのサイトの情報を参考にさせていただきました。
 
-https://html5experts.jp/mganeko/19728/
-https://html5experts.jp/mganeko/19814/
-https://html5experts.jp/mganeko/20013/
+- https://html5experts.jp/mganeko/19728/
+- https://html5experts.jp/mganeko/19814/
+- https://html5experts.jp/mganeko/20013/
