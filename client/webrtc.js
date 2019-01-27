@@ -20,5 +20,9 @@ async function startVideo() {
 // Videoの再生を開始する
 async function playVideo(element, stream) {
     element.srcObject = stream;
-    await element.play();
+    try {
+        await element.play();
+    } catch(erro) {
+        console.log('error auto play:' + error);
+    }
 }
