@@ -140,7 +140,7 @@ function prepareNewConnection(isOffer) {
                     hangUp();
                 }
                 break;
-            case 'dissconnected':
+            case 'disconnected':
                 break;
         }
     };
