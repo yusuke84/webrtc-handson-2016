@@ -12,5 +12,5 @@
 
 ## ライセンス / License
 
-このソースコードはMITランセンスで提供されます
+このソースコードはMITランセンスで提供されます  
 This souce code are under the MIT license
