@@ -9,3 +9,8 @@
 - https://html5experts.jp/mganeko/19728/
 - https://html5experts.jp/mganeko/19814/
 - https://html5experts.jp/mganeko/20013/
+
+## ライセンス / License
+
+このソースコードはMITランセンスで提供されます  
+This souce code are under the MIT license
